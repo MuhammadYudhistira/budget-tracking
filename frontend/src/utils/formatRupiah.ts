@@ -1,4 +1,4 @@
-export default function formatRupioh(value: number) {
+export default function formatRupiah(value: number) {
   const formatter = new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',

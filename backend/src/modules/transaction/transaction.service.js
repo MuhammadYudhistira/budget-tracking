@@ -309,6 +309,8 @@ class TransactionService {
       0
     );
 
+    console.log('Transactions:', transactions);
+
     return {
       totalExpense,
       count: transactions.length,
