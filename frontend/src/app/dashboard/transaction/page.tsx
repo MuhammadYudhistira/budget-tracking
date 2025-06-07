@@ -11,8 +11,9 @@ import {
 import { Transaction } from '@/interfaces/IDashboard';
 import { ModalProps } from '@/interfaces/IModal';
 import Modal from '@/ui/Modal';
-import convertNumRupiah from '@/utils/convertNumRupiah';
 import formatRupiah from '@/utils/formatRupiah';
+import TransactionItem from '@/ui/TransactionItem';
+import { useRouter } from 'next/navigation';
 
 export default function TransactionPage() {
   const [search, setSearch] = useState('');
@@ -20,8 +21,9 @@ export default function TransactionPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const [stats, setStats] = useState({ total_expense: 0, count: 0 });
+  const [stats, setStats] = useState({ totalExpense: 0, count: 0 });
   const [modal, setModal] = useState<ModalProps | null>(null);
+  const router = useRouter();
 
   const loadTransaction = async () => {
     try {
@@ -76,6 +78,7 @@ export default function TransactionPage() {
           const res = await fetchTransaction(page, limit, search);
           setTransaction(res.data);
           setTotalPages(res.pagination.totalPages);
+          loadStats();
         } catch (error) {
           console.error(error);
           setModal({
@@ -93,7 +96,7 @@ export default function TransactionPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TransactionCard
           title="Total Pengeluaran Hari Ini"
-          value={formatRupiah(stats?.total_expense)}
+          value={formatRupiah(stats?.totalExpense)}
         />
         <TransactionCard
           title="Jumlah Transaksi Hari Ini"
@@ -120,71 +123,31 @@ export default function TransactionPage() {
           <FaPlus /> Buat Transaksi
         </Link>
       </div>
+      <div className="flex flex-col items-center justify-center space-y-4">
+        {transaction.length > 0 ? (
+          transaction.map((tx) => {
+            const tanggal = new Date(tx.date).toLocaleDateString('id-ID');
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <div className="min-w-[600px]">
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="text-gray-500 border-b">
-                <th className="p-3">No</th>
-                <th>Nama</th>
-                <th>Waktu</th>
-                <th>Jumlah</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transaction.length > 0 ? (
-                transaction.map((tx, idx) => {
-                  const tanggal = new Date(tx.date).toLocaleDateString('id-ID');
-                  return (
-                    <tr key={idx} className="border-t text-gray-700">
-                      <td className="p-4">{(page - 1) * limit + idx + 1}</td>
-                      <td>
-                        <div className="font-semibold">
-                          {tx?.category?.name}
-                        </div>
-                        <div className="text-xs text-gray-500">{tx?.note}</div>
-                      </td>
-                      <td>{tanggal}</td>
-                      <td
-                        className={`
-                                        font-medium ${
-                                          tx.type === 'expense'
-                                            ? 'text-red-600'
-                                            : 'text-green-600'
-                                        }
-                                        `}>
-                        {tx.type === 'expense' ? '- ' : '+ '}
-                        {convertNumRupiah(tx?.amount)}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-4">
-                          <Link
-                            href={`/dashboard/transaction/edit/${tx.id}`}
-                            className="text-blue-500 hover:text-blue-700">
-                            <FaEdit />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(tx.id)}
-                            className="text-red-500 hover:text-red-700">
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="text-center text-gray-400 py-6">
-                    Tidak Ada Transaksi Ditemukan
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            return (
+              <TransactionItem
+                key={tx.id}
+                amount={parseInt(tx.amount)}
+                category={tx.category.name}
+                date={tanggal}
+                note={tx.note}
+                type={tx.type}
+                onDelete={() => handleDelete(tx.id)}
+                onEdit={() =>
+                  router.push('/dashboard/transaction/edit/' + tx.id)
+                }
+              />
+            );
+          })
+        ) : (
+          <p className='className="text-center text-gray-400 py-6'>
+            Tidak ada transaksi ditemukan
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap justify-end items-center gap-2 text-sm">

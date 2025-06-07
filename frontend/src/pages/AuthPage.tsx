@@ -148,7 +148,8 @@ const AuthPage = () => {
                 <button
                   type="button"
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-600 cursor-pointer"
-                  onClick={() => SetShowPassword(!showPassword)}>
+                  onClick={() => SetShowPassword(!showPassword)}
+                  >
                   {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </button>
               </div>

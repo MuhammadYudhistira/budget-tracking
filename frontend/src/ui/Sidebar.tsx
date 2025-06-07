@@ -70,7 +70,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="flex fixed top-0 left-0 h-screen w-16 flex-col justify-between border-e border-gray-50 bg-white">
+    <div className="hidden md:flex fixed top-0 left-0 h-screen w-16 flex-col justify-between border-e border-gray-50 bg-white">
       <div>
         <div className="inline-flex size-16 items-center justify-center">
           <span className="grid size-10 place-content-center rounded-lg bg-gray-100 text-xs text-gray-600">

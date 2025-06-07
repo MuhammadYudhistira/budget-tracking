@@ -33,6 +33,13 @@ const TransactionForm: React.FC<TransaksiProps> = ({
   };
 
   useEffect(() => {
+    if (initialData) {
+      setForm({
+        ...initialData,
+        categoryId: String(initialData.categoryId),
+        amount: String(initialData.amount),
+      });
+    }
     loadCategories();
   }, []);
 
