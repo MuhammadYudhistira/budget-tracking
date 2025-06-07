@@ -21,16 +21,18 @@ class TransactionService {
 
     const { count, rows } = await Transaction.findAndCountAll({
       where: whereClause,
-      includes: [
+      include: [
         {
           model: Category,
           attributes: ['name', 'description'],
-          required: false,
+          as: 'category',
+          require: false,
         },
         {
           model: User,
           attributes: ['id', 'name', 'email', 'number'],
-          required: false,
+          as: 'user',
+          require: false,
         },
       ],
       order: [['date', 'DESC']],
@@ -52,16 +54,18 @@ class TransactionService {
 
   async getById(id) {
     const transaction = await Transaction.findByPk(id, {
-      includes: [
+      include: [
         {
           model: Category,
           attributes: ['name', 'description'],
-          required: false,
+          as: 'category',
+          require: false,
         },
         {
           model: User,
           attributes: ['id', 'name', 'email', 'number'],
-          required: false,
+          as: 'user',
+          require: false,
         },
       ],
     });
@@ -254,7 +258,7 @@ class TransactionService {
     return transactions;
   }
 
-  async getTodayTransactions(userId) {
+  async getTodayExpenseStats(userId) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
@@ -308,8 +312,6 @@ class TransactionService {
       (sum, tx) => sum + parseInt(tx.amount),
       0
     );
-
-    console.log('Transactions:', transactions);
 
     return {
       totalExpense,
