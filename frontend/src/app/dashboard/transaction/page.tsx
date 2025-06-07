@@ -92,7 +92,7 @@ export default function TransactionPage() {
     });
   };
   return (
-    <div className="p-4 space-y-6">
+    <div className="lg:w-[80%] mx-auto p-4 space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TransactionCard
           title="Total Pengeluaran Hari Ini"
