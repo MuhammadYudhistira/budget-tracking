@@ -1,39 +1,25 @@
 module.exports = (sequelize, DataTypes) => {
-    const Transaction = sequelize.define(
-        "Transaction",
+    const Wallet = sequelize.define(
+        "Wallet",
         {
             id: {
                 type: DataTypes.INTEGER,
                 primaryKey: true,
                 autoIncrement: true,
             },
-            type: {
-                type: DataTypes.ENUM("income", "expense"),
-                allowNull: false,
-            },
-            amount: {
+            name: {
                 type: DataTypes.STRING,
                 allowNull: false,
             },
-            date: {
-                type: DataTypes.DATE,
+            balance: {
+                type: DataTypes.DECIMAL(10, 2),
                 allowNull: false,
-            },
-            note: {
-                type: DataTypes.TEXT,
-                allowNull: true,
+                defaultValue: 0.0,
             },
             user_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 references: { model: "users", key: "id" },
-                onUpdate: "CASCADE",
-                onDelete: "CASCADE",
-            },
-            category_id: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                references: { model: "categories", key: "id" },
                 onUpdate: "CASCADE",
                 onDelete: "CASCADE",
             },
@@ -49,26 +35,23 @@ module.exports = (sequelize, DataTypes) => {
             },
         },
         {
-            tableName: "transactions",
+            tableName: "wallets",
             timestamps: true,
             underscored: true,
         }
     );
 
-    Transaction.associate = (models) => {
-        Transaction.belongsTo(models.User, {
+    Wallet.associate = (models) => {
+        Wallet.belongsTo(models.User, {
             foreignKey: "user_id",
             as: "user",
         });
-        Transaction.belongsTo(models.Wallet, {
+
+        Wallet.hasMany(models.Transaction, {
             foreignKey: "wallet_id",
-            as: "wallet",
-        });
-        Transaction.belongsTo(models.Category, {
-            foreignKey: "category_id",
-            as: "category",
+            as: "transactions",
         });
     };
 
-    return Transaction;
+    return Wallet;
 };
