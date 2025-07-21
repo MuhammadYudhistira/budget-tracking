@@ -148,6 +148,19 @@ class TransactionController {
       next(error);
     }
   }
+
+  async getPieChartData(req,res,next) {
+    try {
+      const pieChartData = await TransactionService.getPieChartData(req.userId);
+      return res.status(200).json({
+        success: true,
+        message: 'Pie Chart Data retrieved successfully',
+        data: pieChartData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new TransactionController();

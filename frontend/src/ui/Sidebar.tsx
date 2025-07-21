@@ -10,6 +10,7 @@ import {
     AiOutlineAppstore,
     AiOutlineSolution,
     AiOutlineWallet,
+    AiOutlinePieChart,
 } from "react-icons/ai";
 import { profile, logout } from "@/services/auth";
 
@@ -67,6 +68,11 @@ const Sidebar = () => {
             href: "/dashboard/summary",
             icon: <AiOutlineSolution className="size-5 opacity-75" />,
             label: "Summary",
+        },
+        {
+            href: "/dashboard/charts",
+            icon: <AiOutlinePieChart className="size-5 opacity-75" />,
+            label: "Charts",
         },
         {
             href: "/dashboard/profile",

@@ -1,5 +1,11 @@
 const { Op, where } = require("sequelize");
-const { Transaction, User, Category, Wallet } = require("../../../models");
+const {
+    Transaction,
+    User,
+    Category,
+    Wallet,
+    sequelize,
+} = require("../../../models");
 const { includes, date } = require("zod/v4");
 const NotFound = require("../../errors/NotFoundError");
 const BadRequestError = require("../../errors/BadRequestError");
@@ -415,6 +421,47 @@ class TransactionService {
             totalExpense,
             count: transactions.length,
         };
+    }
+
+    async getPieChartData(userId) {
+        try {
+            const pieChartData = await Transaction.findAll({
+                attributes: [
+                    [sequelize.col("category.name"), "name"],
+                    [
+                        sequelize.fn(
+                            "SUM",
+                            sequelize.cast(sequelize.col("amount"), "DECIMAL")
+                        ),
+                        "value",
+                    ],
+                ],
+                include: [
+                    {
+                        model: Category,
+                        as: "category",
+                        attributes: [],
+                    },
+                ],
+                where: {
+                    user_id: userId,
+                    type: "expense",
+                },
+                group: ["category.id", "category.name"],
+                order: [[sequelize.fn("SUM", sequelize.col("amount")), "DESC"]],
+                raw: true,
+            });
+
+            const formattedData = pieChartData.map((item) => ({
+                ...item,
+                value: parseFloat(item.value),
+            }));
+
+            return formattedData;
+        } catch (error) {
+            console.error("Error fetching pie chart data:", error);
+            throw new Error("Gagal mengambil data untuk pie chart");
+        }
     }
 }
 

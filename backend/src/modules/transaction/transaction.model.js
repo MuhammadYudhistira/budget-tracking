@@ -37,6 +37,13 @@ module.exports = (sequelize, DataTypes) => {
                 onUpdate: "CASCADE",
                 onDelete: "CASCADE",
             },
+            wallet_id: {
+                type: DataTypes.INTEGER,
+                allowNull: false, // Sesuaikan jika boleh null
+                references: { model: "wallets", key: "id" },
+                onUpdate: "CASCADE",
+                onDelete: "CASCADE",
+            },
             created_at: {
                 allowNull: false,
                 type: DataTypes.DATE,
