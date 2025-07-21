@@ -34,8 +34,17 @@ class TransactionService {
                     as: "user",
                     require: false,
                 },
+                {
+                    model: Wallet,
+                    attributes: ["id", "name", "balance"],
+                    as: "wallet",
+                    require: false,
+                },
             ],
-            order: [["date", "DESC"]],
+            order: [
+                ["date", "DESC"],
+                ["id", "DESC"],
+            ],
             limit,
             offset,
             distinct: true,
@@ -85,6 +94,12 @@ class TransactionService {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+        if (data.wallet_id === undefined) {
+            throw new BadRequestError(
+                "Pilih Wallet terlebih dahulu, Jika belum ada, silahkan buat Wallet terlebih dahulu"
+            );
+        }
+
         const transactions = await Transaction.findAll({
             where: {
                 user_id: data.user_id,
@@ -105,14 +120,14 @@ class TransactionService {
 
         const amountToAdd = parseInt(data.amount);
 
-        if (
-            data.type === "expense" &&
-            totalIncome < totalExpense + amountToAdd
-        ) {
-            throw new BadRequestError("Income bulan ini tidak mencukupi");
+        const wallet = await Wallet.findByPk(data.wallet_id);
+        console.log(wallet.balance, totalExpense, amountToAdd);
+        if (data.type === "expense" && wallet.balance < amountToAdd) {
+            throw new BadRequestError(
+                "Saldo Wallet tidak mencukupi untuk transaksi ini"
+            );
         }
 
-        const wallet = await Wallet.findByPk(data.wallet_id);
         if (!wallet) throw new NotFound("Wallet not found");
 
         if (data.type === "income") {
@@ -127,64 +142,85 @@ class TransactionService {
 
     async update(id, data) {
         const transaction = await Transaction.findByPk(id);
-        if (!transaction) throw new NotFound("Transaction not found");
+        if (!transaction) {
+            throw new NotFound("Transaction not found");
+        }
 
-        const wallet = await Wallet.findByPk(transaction.wallet_id);
-        if (!wallet) throw new NotFound("Wallet not found");
-
-        // Konversi agar tidak terjadi string concat
-        const oldAmount = parseInt(transaction.amount);
+        // Konversi data baru ke tipe yang benar
         const newAmount = parseInt(data.amount);
-        wallet.balance = parseInt(wallet.balance);
+        const newType = data.type;
+        const newWalletId = data.walletId ? parseInt(data.walletId) : null;
 
-        // Kembalikan saldo dari transaksi lama
-        if (transaction.type === "income") {
-            wallet.balance -= oldAmount;
-        } else {
-            wallet.balance += oldAmount;
-        }
+        // Konversi data lama
+        const oldAmount = parseInt(transaction.amount);
+        const oldType = transaction.type;
+        const oldWalletId = transaction.wallet_id;
 
-        // Tambahkan pengaruh transaksi baru
-        if (data.type === "income") {
-            wallet.balance += newAmount;
-        } else {
-            wallet.balance -= newAmount;
-        }
+        const isWalletChanging = newWalletId && newWalletId !== oldWalletId;
 
-        await wallet.save();
+        if (isWalletChanging) {
+            // --- LOGIKA JIKA DOMPET BERPINDAH ---
 
-        // Validasi income bulan ini (opsional)
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            // 1. Ambil kedua dompet
+            const oldWallet = await Wallet.findByPk(oldWalletId);
+            const newWallet = await Wallet.findByPk(newWalletId);
+            if (!oldWallet || !newWallet)
+                throw new NotFound("One of the wallets not found");
 
-        const transactions = await Transaction.findAll({
-            where: {
-                user_id: transaction.user_id,
-                date: {
-                    [Op.between]: [startOfMonth, endOfMonth],
-                },
-            },
-        });
-
-        let totalIncome = 0;
-        let totalExpense = 0;
-
-        for (const tx of transactions) {
-            if (tx.id === transaction.id) continue; // skip transaksi yang sedang diupdate
-            const amount = parseInt(tx.amount);
-            if (tx.type === "income") totalIncome += amount;
-            if (tx.type === "expense") totalExpense += amount;
-        }
-
-        if (data.type === "expense") {
-            totalExpense += newAmount;
-            if (totalIncome < totalExpense) {
-                throw new BadRequestError("Income bulan ini tidak mencukupi");
+            // 2. Validasi saldo di dompet BARU
+            if (
+                newType === "expense" &&
+                parseInt(newWallet.balance) < newAmount
+            ) {
+                throw new BadRequestError(
+                    "Saldo di dompet tujuan tidak mencukupi"
+                );
             }
+
+            // 3. Kembalikan saldo di dompet LAMA
+            if (oldType === "income") {
+                oldWallet.balance = parseInt(oldWallet.balance) - oldAmount;
+            } else {
+                // expense
+                oldWallet.balance = parseInt(oldWallet.balance) + oldAmount;
+            }
+            await oldWallet.save();
+
+            // 4. Terapkan saldo di dompet BARU
+            if (newType === "income") {
+                newWallet.balance = parseInt(newWallet.balance) + newAmount;
+            } else {
+                // expense
+                newWallet.balance = parseInt(newWallet.balance) - newAmount;
+            }
+            await newWallet.save();
+        } else {
+            // --- LOGIKA JIKA DOMPET TETAP SAMA --- (Kode yang kita buat sebelumnya)
+            const wallet = await Wallet.findByPk(oldWalletId);
+            if (!wallet) throw new NotFound("Wallet not found");
+
+            const revertedBalance =
+                parseInt(wallet.balance) +
+                (oldType === "expense" ? oldAmount : -oldAmount);
+
+            if (newType === "expense" && revertedBalance < newAmount) {
+                throw new BadRequestError(
+                    "Saldo Wallet tidak mencukupi untuk mengubah transaksi ini"
+                );
+            }
+
+            wallet.balance =
+                revertedBalance +
+                (newType === "income" ? newAmount : -newAmount);
+            await wallet.save();
         }
 
-        await Transaction.update(data, { where: { id } });
+        // --- TERAKHIR: UPDATE DATA TRANSAKSI ---
+        // Perintah ini akan memperbarui semua field (amount, note, date, categoryId, walletId, dll)
+        console.log("DATA FINAL YANG AKAN DI-UPDATE:", data);
+        data.category_id = data.categoryId ? parseInt(data.categoryId) : null;
+        await transaction.update(data);
+
         return true;
     }
 

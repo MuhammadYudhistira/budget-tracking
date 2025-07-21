@@ -14,10 +14,17 @@ export interface Transaction {
   date: string;
   type: "income" | "expense";
   amount: string;
+  wallet: WalletData
 }
 
 export interface ChartPoint {
   date: string;
   income: number;
   expense: number;
+}
+
+export interface WalletData {
+  id: number;
+  name: string;
+  balance: number;
 }

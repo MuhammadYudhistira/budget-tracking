@@ -14,6 +14,7 @@ import Modal from "@/ui/Modal";
 import formatRupiah from "@/utils/formatRupiah";
 import TransactionItem from "@/ui/TransactionItem";
 import { useRouter } from "next/navigation";
+import Pagination from "@/ui/Pagination";
 
 export default function TransactionPage() {
     const [search, setSearch] = useState("");
@@ -25,18 +26,22 @@ export default function TransactionPage() {
     const [modal, setModal] = useState<ModalProps | null>(null);
     const router = useRouter();
 
-    const loadTransaction = async () => {
-        try {
-            const res = await fetchTransaction(page, limit, search);
-            setTransaction(res.data);
-            setTotalPages(res.pagination.totalPages);
-        } catch (error) {
-            if (error instanceof Error) {
-                console.error({ message: error.message, type: "danger" });
-            } else {
-                console.error({ message: "Terjadi Kesalahan", type: "danger" });
+        const loadTransaction = async () => {
+            try {
+                const res = await fetchTransaction(page, limit, search);
+                setTransaction(res.data);
+                setTotalPages(res.pagination.totalPages);
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error({ message: error.message, type: "danger" });
+                } else {
+                    console.error({ message: "Terjadi Kesalahan", type: "danger" });
+                }
             }
-        }
+        };
+
+            const handlePageChange = (newPage: number) => {
+        setPage(newPage);
     };
 
     const loadStats = async () => {
@@ -124,11 +129,11 @@ export default function TransactionPage() {
                     <FaPlus /> Buat Transaksi
                 </Link>
             </div>
-            <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-center justify-center space-y-4">
                 {transaction.length > 0 ? (
                     transaction.map((tx) => {
                         const tanggal = new Date(tx.date).toLocaleDateString(
-                            "id-ID"
+                            "id-ID", { day: "numeric", month: "long", year: "numeric"},
                         );
 
                         return (
@@ -139,6 +144,7 @@ export default function TransactionPage() {
                                 date={tanggal}
                                 note={tx.note}
                                 type={tx.type}
+                                walletName={tx.wallet.name}
                                 onDelete={() => handleDelete(tx.id)}
                                 onEdit={() =>
                                     router.push(
@@ -154,38 +160,11 @@ export default function TransactionPage() {
                     </p>
                 )}
             </div>
-
-            <div className="flex flex-wrap justify-end items-center gap-2 text-sm">
-                <button
-                    className="px-3 py-1 border rounded hover:bg-gray-100"
-                    disabled={page === 1}
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                >
-                    Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => (
-                    <button
-                        key={i + 1}
-                        className={`px-3 py-1 border rounded ${
-                            page === i + 1
-                                ? "bg-indigo-600 text-white"
-                                : "hover:bg-gray-100"
-                        }`}
-                        onClick={() => setPage(i + 1)}
-                    >
-                        {i + 1}
-                    </button>
-                ))}
-                <button
-                    className="px-3 py-1 border rounded hover:bg-gray-100"
-                    disabled={page === totalPages}
-                    onClick={() =>
-                        setPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                >
-                    Next
-                </button>
-            </div>
+                   <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
 
             {modal && (
                 <Modal

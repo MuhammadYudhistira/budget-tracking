@@ -14,6 +14,7 @@ type TransactionProps = {
   category: string;
   amount: number;
   note: string | undefined;
+  walletName: string;
   onEdit?: () => void;
   onDelete?: () => void;
 };
@@ -24,6 +25,7 @@ const TransactionItem = ({
   category,
   amount,
   note,
+  walletName,
   onEdit,
   onDelete,
 }: TransactionProps) => {
@@ -66,6 +68,9 @@ const TransactionItem = ({
           </div>
           <div className="text-xs text-slate-500 uppercase tracking-wide">
             {type}
+          </div>
+          <div className="text-xs text-indigo-500 uppercase tracking-wide">
+            {walletName}
           </div>
         </div>
         <div className="flex space-x-1 sm:space-x-2">
